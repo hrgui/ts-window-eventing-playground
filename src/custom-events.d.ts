@@ -1,7 +1,7 @@
 declare global {
   interface WindowEventHandlersEventMap {
-    "counter/set": CustomEvent<{ counter: number; eventId: string }>;
-    "counter/get": CustomEvent<{ eventId: string }>;
+    "pokemon/set": CustomEvent<{ id: number; eventId: string }>;
+    "pokemon/get": CustomEvent<{ eventId: string }>;
   }
 }
 
