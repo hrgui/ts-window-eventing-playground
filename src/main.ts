@@ -1,19 +1,14 @@
 import "./style.css";
-import javascriptLogo from "./javascript.svg";
-import viteLogo from "/vite.svg";
 
 document.querySelector("#app")!.innerHTML = `
   <div>
-    <a href="https://vite.dev" target="_blank">
-      <img src="${viteLogo}" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">
-      <img src="${javascriptLogo}" class="logo vanilla" alt="JavaScript logo" />
-    </a>
-    <h1>Hello Vite!</h1>
-    <div class="card">
-      <button id="counter" type="button"></button>
-    </div>
+  <div class="card">
+    <button id="dec" type="button">-</button>
+    <div id="id"></div>
+    <button id="inc" type="button">+</button>
+  </div>
+  <h1 id="pokemonName">-</h1>
+    <div id="pokemonImages"></div>
     <p class="read-the-docs">
       Click on the Vite logo to learn more
     </p>
@@ -55,29 +50,54 @@ function asyncRequestEvent(eventName: string, detail?: any): any {
   });
 }
 
-const element = document.querySelector("#counter")!;
+const inc = document.querySelector("#inc")!;
+const dec = document.querySelector("#dec")!;
 
-element.addEventListener("click", async () => {
-  const counterValueNow = await asyncRequestEvent("counter/get");
-  const currentCount = counterValueNow.counter;
+inc.addEventListener("click", async (e) => {
+  const currentId = await asyncRequestEvent("pokemon/get");
   window.dispatchEvent(
-    new CustomEvent("counter/set", {
-      detail: { counter: currentCount + 1 },
+    new CustomEvent("pokemon/set", {
+      detail: { id: currentId.id + 1 },
+    })
+  );
+});
+dec.addEventListener("click", async (e) => {
+  const currentId = await asyncRequestEvent("pokemon/get");
+  window.dispatchEvent(
+    new CustomEvent("pokemon/set", {
+      detail: { id: currentId.id - 1 },
     })
   );
 });
 
-function onCounterUpdated() {
-  asyncRequestEvent("counter/get").then(({ counter }: any) => {
-    element.innerHTML = `count is ${counter}`;
+function onPokemonUpdated() {
+  asyncRequestEvent("pokemon/get").then(({ id, isLoading, data }: any) => {
+    document.getElementById("id")!.innerHTML = `#${id}`;
+
+    document.getElementById("pokemonName")!.innerHTML =
+      isLoading || !data ? `Loading...` : data.name;
+
+    const pokemonImages = document.getElementById("pokemonImages");
+    pokemonImages!.innerHTML = "";
+    data?.allImages?.forEach((image: string) => {
+      const img = document.createElement("img");
+      img.src = image;
+      img.width = 100;
+      img.height = 100;
+      img.alt = "Pokemon Image";
+      img.className = "pokemon-image";
+      pokemonImages?.appendChild(img);
+    });
   });
 }
 
-window.addEventListener("counter/set/response", () => {
-  onCounterUpdated();
+window.addEventListener("pokemon/set/response", () => {
+  onPokemonUpdated();
 });
 
-onCounterUpdated();
+asyncRequestEvent("pokemon/set", { id: 1 }).then(() => {
+  onPokemonUpdated();
+});
 
 (window as any).asyncRequestEvent = asyncRequestEvent;
 //setupCounter(document.querySelector("#counter"));
