@@ -9,9 +9,6 @@ document.querySelector("#app")!.innerHTML = `
   </div>
   <h1 id="pokemonName">-</h1>
     <div id="pokemonImages"></div>
-    <p class="read-the-docs">
-      Click on the Vite logo to learn more
-    </p>
   </div>
 `;
 
@@ -23,28 +20,36 @@ function generateUUID() {
   });
 }
 
-function asyncRequestEvent(eventName: string, detail?: any): any {
+type EventDetail<T extends keyof WindowEventMap> = WindowEventMap[T] extends CustomEvent<infer D>
+  ? D
+  : never;
+
+function asyncRequestEvent<K extends keyof WindowEventMap & ("pokemon/get" | "pokemon/set")>(
+  eventName: K,
+  detail?: Omit<EventDetail<K>, "eventId">
+): Promise<EventDetail<`${K}/response`>> {
   return new Promise((resolve, reject) => {
     const eventId = generateUUID();
+    const responseEventName = `${eventName}/response` as `${K}/response`;
 
     const x = (event: Event) => {
-      removeEventListener(`${eventName}/${eventId}/response`, x);
-
-      if ((event as CustomEvent).detail.error) {
-        reject((event as CustomEvent).detail.error);
+      window.removeEventListener(responseEventName, x);
+      const customEvent = event as CustomEvent<EventDetail<`${K}/response`>>;
+      if (customEvent.detail && (customEvent.detail as any).error) {
+        reject((customEvent.detail as any).error);
       } else {
-        resolve((event as CustomEvent).detail);
+        resolve(customEvent.detail);
       }
     };
 
-    window.addEventListener(`${eventName}/${eventId}/response`, x);
+    window.addEventListener(responseEventName, x);
 
     window.dispatchEvent(
       new CustomEvent(eventName, {
         detail: {
           eventId,
           ...detail,
-        },
+        } as EventDetail<K>,
       })
     );
   });
@@ -71,7 +76,7 @@ dec.addEventListener("click", async (e) => {
 });
 
 function onPokemonUpdated() {
-  asyncRequestEvent("pokemon/get").then(({ id, isLoading, data }: any) => {
+  asyncRequestEvent("pokemon/get").then(({ id, isLoading, data }) => {
     document.getElementById("id")!.innerHTML = `#${id}`;
 
     document.getElementById("pokemonName")!.innerHTML =
