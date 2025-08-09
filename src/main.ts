@@ -24,17 +24,21 @@ type EventDetail<T extends keyof WindowEventMap> = WindowEventMap[T] extends Cus
   ? D
   : never;
 
-function asyncRequestEvent<K extends keyof WindowEventMap & ("pokemon/get" | "pokemon/set")>(
-  eventName: K,
-  detail?: Omit<EventDetail<K>, "eventId">
-): Promise<EventDetail<`${K}/response`>> {
+function asyncRequestEvent<
+  K extends keyof WindowEventMap,
+  R extends `${Extract<K, string>}/response` & keyof WindowEventMap = `${Extract<
+    K,
+    string
+  >}/response` &
+    keyof WindowEventMap
+>(eventName: K, detail?: Omit<EventDetail<K>, "eventId">): Promise<EventDetail<R>> {
   return new Promise((resolve, reject) => {
     const eventId = generateUUID();
-    const responseEventName = `${eventName}/response` as `${K}/response`;
+    const responseEventName = `${eventName}/response` as R;
 
     const x = (event: Event) => {
       window.removeEventListener(responseEventName, x);
-      const customEvent = event as CustomEvent<EventDetail<`${K}/response`>>;
+      const customEvent = event as CustomEvent<EventDetail<R>>;
       if (customEvent.detail && (customEvent.detail as any).error) {
         reject((customEvent.detail as any).error);
       } else {
@@ -58,7 +62,7 @@ function asyncRequestEvent<K extends keyof WindowEventMap & ("pokemon/get" | "po
 const inc = document.querySelector("#inc")!;
 const dec = document.querySelector("#dec")!;
 
-inc.addEventListener("click", async (e) => {
+inc.addEventListener("click", async () => {
   const currentId = await asyncRequestEvent("pokemon/get");
   window.dispatchEvent(
     new CustomEvent("pokemon/set", {
@@ -66,7 +70,7 @@ inc.addEventListener("click", async (e) => {
     })
   );
 });
-dec.addEventListener("click", async (e) => {
+dec.addEventListener("click", async () => {
   const currentId = await asyncRequestEvent("pokemon/get");
   window.dispatchEvent(
     new CustomEvent("pokemon/set", {
