@@ -34,7 +34,7 @@ function asyncRequestEvent<
 >(eventName: K, detail?: Omit<EventDetail<K>, "eventId">): Promise<EventDetail<R>> {
   return new Promise((resolve, reject) => {
     const eventId = generateUUID();
-    const responseEventName = `${eventName}/response` as R;
+    const responseEventName = `${eventName}/${eventId}/response` as R;
 
     const x = (event: Event) => {
       window.removeEventListener(responseEventName, x);
